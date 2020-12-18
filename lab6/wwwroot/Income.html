@@ -1,0 +1,240 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Список прихода-расхода ГСМ</title>
+    <link href="lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+    <script src="lib/jquery/dist/jquery.js"></script>
+    <link href="lib/jquery-ui/themes/base/jquery-ui.min.css" rel="stylesheet" />
+    <script src="lib/jquery-ui/jquery-ui.js"></script>
+    <script src="lib/jquery-ui/ui/i18n/datepicker-ru.js"></script>
+</head>
+<body>
+    <h2>Список прихода-расхода ГСМ</h2>
+    <form name="incomeForm">
+        <input type="hidden" name="incomeAndExpenseOfGsmid" value="0" />
+        <div class="form-group col-md-5">
+            <label for="numberOfCapacity">Номер емкости:</label>
+            <input class="form-control" name="numberOfCapacity" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="incomeOrExpensePerliter">Приход или расход за литр:</label>
+            <input class="form-control" name="incomeOrExpensePerliter" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="containerId">Код емкости :</label>
+            <input class="form-control" name="containerId" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="dateAndTimeOfTheOperationIncomeOrExpense">Дата и время операции прихода или расхода:</label>
+            <input class="form-control" name="dateAndTimeOfTheOperationIncomeOrExpense" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="responsibleForTheOperation">Ответственный за операцию:</label>
+            <input class="form-control" name="responsibleForTheOperation" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="fullName">ФИО сотрудника:</label>
+            <select id="staffId" name="staffId"></select>
+        </div>
+        <div class="panel-body">
+            <button type="submit" id="submit" class="btn btn-primary">Сохранить</button>
+            <a id="reset" class="btn btn-primary">Сброс</a>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped col-md-6">
+        <thead><tr><th>Номер емкости</th><th>Приход или расход за литр</th><th>Код емкости</th><th>Дата и время операции прихода или расхода</th><th>Ответственный за операцию</th><th>ФИО сотрудника</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        async function GetIncomeAndExpensesOfGsms() {
+            const response = await fetch("/api/incomeAndExpensesOfGsms", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const incomeAndExpensesOfGsms = await response.json();
+                let rows = document.querySelector("tbody");
+                incomeAndExpensesOfGsms.forEach(incomeAndExpensesOfGsm => {
+                    rows.append(row(incomeAndExpensesOfGsm));
+                });
+            }
+        }
+        async function GetIncomeAndExpenses(id) {
+            $.ajax({
+                url: '/api/IncomeAndExpensesOfGsms/' + id,
+                type: 'GET',
+                contentType: "application/json",
+                success: function (incomeAndExpensesOfGsm) {
+                    var form = document.forms["incomeForm"];
+                    form.elements["incomeOrExpensePerliter"].value = incomeAndExpensesOfGsm.incomeOrExpensePerliter;
+                    form.elements["numberOfCapacity"].value = incomeAndExpensesOfGsm.numberOfCapacity;
+                    form.elements["containerId"].value = incomeAndExpensesOfGsm.containerId;
+                    form.elements["staffId"].value = incomeAndExpensesOfGsm.staffId;
+                    form.elements["dateAndTimeOfTheOperationIncomeOrExpense"].value = incomeAndExpensesOfGsm.dateAndTimeOfTheOperationIncomeOrExpense;
+                    form.elements["responsibleForTheOperation"].value = incomeAndExpensesOfGsm.responsibleForTheOperation;
+                }
+            });
+        }
+        async function CreateIncomeAndExpensesOfGsms(incomeOrExpensePerliter, containerId, staffId, dateAndTimeOfTheOperationIncomeOrExpense, responsibleForTheOperation) {
+
+            $.ajax({
+                url: "api/IncomeAndExpensesOfGsms/",
+                contentType: "application/json",
+                method: "POST",
+                data: JSON.stringify({
+                    staffId: parseInt(staffId, 10),
+                    incomeOrExpensePerliter: parseInt(incomeOrExpensePerliter, 10),
+                    containerId: parseInt(containerId, 10),
+                    dateAndTimeOfTheOperationIncomeOrExpense: dateAndTimeOfTheOperationIncomeOrExpense,
+                    responsibleForTheOperation: parseInt(responsibleForTheOperation, 10)
+                }),
+                success: function (incomeAndExpensesOfGsm) {
+                    reset();
+                    var form = document.forms["incomeForm"];
+                    incomeAndExpensesOfGsm.fullName = form.elements["incomeAndExpenseOfGsmid"].options[incomeAndExpenseOfGsmid].text;
+                    document.querySelector("tbody").append(row(incomeAndExpensesOfGsm));
+                }
+            })
+        }
+        async function EditIncomeAndExpensesOfGsms(incomeAndExpenseOfGsmid, incomeOrExpensePerliter, containerId, staffId, dateAndTimeOfTheOperationIncomeOrExpense, responsibleForTheOperation) {
+            const response = await fetch("api/IncomeAndExpensesOfGsms/", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+
+                    incomeAndExpenseOfGsmid: parseInt(incomeAndExpenseOfGsmid, 10),
+                    staffId: parseInt(staffId, 10),
+                    incomeOrExpensePerliter: parseInt(incomeOrExpensePerliter, 10),
+                    containerId: parseInt(containerId, 10),
+                    dateAndTimeOfTheOperationIncomeOrExpense: dateAndTimeOfTheOperationIncomeOrExpense,
+                    responsibleForTheOperation: parseInt(responsibleForTheOperation, 10)
+                })
+            });
+            if (response.ok === true) {
+                const incomeAndExpensesOfGsm = await response.json();
+                reset();
+                var form = document.forms["incomeForm"];
+                incomeAndExpensesOfGsm.fullName = form.elements["incomeAndExpenseOfGsmid"].options[incomeAndExpenseOfGsmid].text;
+                document.querySelector("tr[data-rowid='" + incomeAndExpensesOfGsm.incomeAndExpensesOfGsm + "']").replaceWith(row(incomeAndExpensesOfGsm));
+            }
+        }
+        async function DeleteIncomeAndExpensesOfGsm(id) {
+            const response = await fetch("/api/IncomeAndExpensesOfGsms/" + id, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const incomeAndExpensesOfGsm = await response.json();
+                document.querySelector("tr[data-rowid='" + incomeAndExpensesOfGsm.incomeAndExpenseOfGsmid + "']").remove();
+            }
+        }
+
+        function
+
+            GetStaffs() {
+            var listItems = "";
+            $.ajax({
+                url: '/api/IncomeAndExpensesOfGsms/staffs',
+                type: 'GET',
+                contentType: "application/json",
+                success: function (staffs) {
+                    listItems = listItems + "<option value=0 selected>(выбор)</option>";
+                    $.each(staffs, function (index, staff) {
+                        listItems = listItems + "<option value='" + staff.staffId + "'>" + staff.fullName + "</option>";
+                    });
+                    $("#staffId").html(listItems);
+                }
+            });
+        }
+
+        function reset() {
+            const form = document.forms["incomeForm"];
+            form.reset();
+            form.elements["incomeAndExpenseOfGsmid"].value = 0;
+        }
+        function row(incomeAndExpensesOfGsm) {
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", incomeAndExpensesOfGsm.incomeAndExpenseOfGsmid);
+
+            const idTd = document.createElement("td");
+            idTd.append(incomeAndExpensesOfGsm.incomeAndExpenseOfGsmid);
+            tr.append(idTd);
+
+            const incomeOrExpensePerliterTd = document.createElement("td");
+            incomeOrExpensePerliterTd.append(incomeAndExpensesOfGsm.incomeOrExpensePerliter);
+            tr.append(incomeOrExpensePerliterTd);
+
+            const containerIdTd = document.createElement("td");
+            containerIdTd.append(incomeAndExpensesOfGsm.containerId);
+            tr.append(containerIdTd);
+
+            const dateAndTimeOfTheOperationIncomeOrExpenseTd = document.createElement("td");
+            dateAndTimeOfTheOperationIncomeOrExpenseTd.append(incomeAndExpensesOfGsm.dateAndTimeOfTheOperationIncomeOrExpense);
+            tr.append(dateAndTimeOfTheOperationIncomeOrExpenseTd);
+
+            const responsibleForTheOperationTd = document.createElement("td");
+            responsibleForTheOperationTd.append(incomeAndExpensesOfGsm.responsibleForTheOperation);
+            tr.append(responsibleForTheOperationTd);
+
+            const fullNameTd = document.createElement("td");
+            fullNameTd.append(incomeAndExpensesOfGsm.fullName);
+            tr.append(fullNameTd);
+
+            const linksTd = document.createElement("td");
+
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", incomeAndExpensesOfGsm.incomeAndExpenseOfGsmid);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                GetIncomeAndExpenses(incomeAndExpensesOfGsm.incomeAndExpenseOfGsmid);
+            });
+            linksTd.append(editLink);
+
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-id", incomeAndExpensesOfGsm.incomeAndExpenseOfGsmid);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                DeleteIncomeAndExpensesOfGsm(incomeAndExpensesOfGsm.incomeAndExpenseOfGsmid);
+            });
+
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+
+            return tr;
+        }
+
+        $("#reset").click(function (e) {
+            e.preventDefault();
+            reset();
+        })
+
+        document.forms["incomeForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["incomeForm"];
+            const id = form.elements["incomeAndExpenseOfGsmid"].value;
+            const incomeOrExpensePerliter = form.elements["incomeOrExpensePerliter"].value;
+            const containerId = form.elements["containerId"].value;
+            const dateAndTimeOfTheOperationIncomeOrExpense = form.elements["dateAndTimeOfTheOperationIncomeOrExpense"].value;
+            const responsibleForTheOperation = form.elements["responsibleForTheOperation"].value;
+            const staffId = form.elements["staffId"].value;
+            if (id == 0)
+                CreateIncomeAndExpensesOfGsms(incomeOrExpensePerliter, containerId, dateAndTimeOfTheOperationIncomeOrExpense, responsibleForTheOperation, staffId);
+            else
+                EditIncomeAndExpensesOfGsms(id, incomeOrExpensePerliter, containerId, dateAndTimeOfTheOperationIncomeOrExpense, responsibleForTheOperation, staffId);
+        });
+
+        GetIncomeAndExpensesOfGsms();
+        GetStaffs();
+    </script>
+</body>
+</html>
